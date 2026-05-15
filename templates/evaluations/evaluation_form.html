@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Новая оценка</h1>
+
+<div class="card">
+    <p class="muted" style="margin-top:0;">Доступны только завершённые задачи с исполнителем в ваших командах (роль менеджера), по одной оценке на задачу.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="button">Сохранить</button>
+    </form>
+</div>
+{% endblock %}

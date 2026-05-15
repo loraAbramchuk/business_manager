@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+<h1>Главная</h1>
+
+<div class="card">
+    <h3 style="margin-top:0;">Здравствуйте, {{ user.email }}</h3>
+    <p class="muted">Вы вошли в систему управления командой.</p>
+</div>
+
+<div class="card">
+    <h3 style="margin-top:0;">Быстрые действия</h3>
+    <div class="toolbar">
+        <a class="button" href="{% url 'task_create' %}">Новая задача</a>
+        <a class="button" href="{% url 'meeting_create' %}">Новая встреча</a>
+        <a class="button button--secondary" href="{% url 'calendar' %}">Календарь (неделя)</a>
+        <a class="button button--secondary" href="{% url 'calendar_month' %}">Календарь (месяц)</a>
+    </div>
+</div>
+{% else %}
+<h1>Добро пожаловать</h1>
+<div class="card">
+    <p class="muted">Войдите или зарегистрируйтесь, чтобы работать с задачами, командами и встречами.</p>
+    <a class="button" href="{% url 'login' %}">Вход</a>
+    <a class="button button--secondary" href="{% url 'register' %}">Регистрация</a>
+</div>
+{% endif %}
+
+{% endblock %}

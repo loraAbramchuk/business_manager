@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Новая команда</h1>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Создать</button>
+        <a class="button button--secondary" href="{% url 'team_list' %}">К списку команд</a>
+    </form>
+</div>
+
+{% endblock %}

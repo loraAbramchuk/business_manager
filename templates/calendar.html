@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Календарь: неделя с {{ today }}</h1>
+
+<div class="card">
+    <h2 style="margin-top:0;">Задачи</h2>
+    <ul style="padding-left:1.2rem;">
+    {% for task in tasks %}
+        <li><a href="{% url 'task_detail' task.id %}">{{ task.title }}</a> —
+            {% if task.status == 'DONE' %}выполнено{% elif task.status == 'IN_PROGRESS' %}в работе{% else %}открыта{% endif %}
+            — {{ task.deadline }}</li>
+    {% empty %}
+        <li class="muted">Нет задач на этот период.</li>
+    {% endfor %}
+    </ul>
+</div>
+
+<div class="card">
+    <h2 style="margin-top:0;">Встречи</h2>
+    <ul style="padding-left:1.2rem;">
+    {% for meeting in meetings %}
+        <li>{{ meeting.title }} — {{ meeting.start_time }}</li>
+    {% empty %}
+        <li class="muted">Нет встреч на этот период.</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}

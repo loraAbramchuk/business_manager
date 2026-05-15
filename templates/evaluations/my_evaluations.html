@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Мои оценки</h1>
+
+<form method="get" class="card">
+    <p class="muted" style="margin-top:0;">Укажите месяц для среднего балла (пусто — текущий месяц).</p>
+    <label>Год <input type="number" name="year" value="{{ filter_year|default:'' }}" placeholder="например, 2026" style="width:7rem;"></label>
+    <label style="margin-left:12px;">Месяц <input type="number" name="month" min="1" max="12" value="{{ filter_month|default:'' }}" placeholder="1–12" style="width:5rem;"></label>
+    <button type="submit" class="button" style="margin-top:12px;">Пересчитать</button>
+</form>
+
+<div class="card">
+    <p style="margin:0;"><b>Средний балл</b> за период: <em>{{ avg_period_caption }}</em></p>
+    <p style="margin:8px 0 0; font-size:1.25rem;">{{ avg|default:"— нет оценок —" }}</p>
+</div>
+
+<h2>История</h2>
+<ul style="padding-left:1.2rem;">
+{% for e in evaluations %}
+    <li style="margin-bottom:8px;">{{ e.task.title }} — <b>{{ e.score }}</b> из 5</li>
+{% empty %}
+    <li class="muted">Оценок пока нет.</li>
+{% endfor %}
+</ul>
+{% endblock %}

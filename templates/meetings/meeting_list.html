@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Встречи</h1>
+
+<div class="toolbar">
+    <a class="button" href="{% url 'meeting_create' %}">Новая встреча</a>
+</div>
+
+{% for meeting in meetings %}
+<div class="card">
+    <b>{{ meeting.title }}</b>
+    <p class="muted" style="margin:8px 0 0;">{{ meeting.start_time }} — {{ meeting.end_time }}</p>
+
+    <form method="post" action="{% url 'meeting_delete' meeting.id %}" style="margin-top:12px;" onsubmit="return confirm('Отменить встречу?');">
+        {% csrf_token %}
+        <button type="submit" class="button button--danger">Отменить встречу</button>
+    </form>
+</div>
+{% empty %}
+<div class="card">
+    <p class="muted">Нет встреч, где вы указаны как участник.</p>
+</div>
+{% endfor %}
+
+{% endblock %}

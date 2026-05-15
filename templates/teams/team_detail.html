@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>{{ team.name }}</h1>
+{% if is_team_manager %}
+<p class="toolbar">
+    <a class="button" href="{% url 'add_member' team.id %}">Добавить участника</a>
+</p>
+{% endif %}
+
+<div class="card">
+    <p style="margin:0;"><b>Код приглашения:</b> <code style="background:#f0f3f5; padding:4px 8px; border-radius:4px;">{{ team.join_code }}</code></p>
+</div>
+
+<div class="card">
+    <p style="margin:0;"><b>Владелец:</b> {{ team.owner.email }}</p>
+</div>
+
+<h2>Участники</h2>
+
+{% for membership in memberships %}
+<div class="card">
+
+    <b>{{ membership.user.email }}</b>
+    <span style="margin-left:8px;">
+    {% if membership.role == "MANAGER" %}
+    <span style="background:#e67e22; color:#fff; padding:4px 10px; border-radius:6px; font-size:12px;">Менеджер</span>
+    {% else %}
+    <span style="background:#7f8c8d; color:#fff; padding:4px 10px; border-radius:6px; font-size:12px;">Сотрудник</span>
+    {% endif %}
+    </span>
+
+    {% if is_team_manager %}
+    <div style="margin-top:12px;">
+        <form method="post" action="{% url 'membership_set_role' membership.id %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="MANAGER">
+            <button type="submit" class="button" style="font-size:12px; padding:6px 10px;">Сделать менеджером</button>
+        </form>
+        <form method="post" action="{% url 'membership_set_role' membership.id %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="EMPLOYEE">
+            <button type="submit" class="button button--secondary" style="font-size:12px; padding:6px 10px;">Сделать сотрудником</button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% empty %}
+<div class="card"><p class="muted">Участников пока нет.</p></div>
+{% endfor %}
+
+{% endblock %}

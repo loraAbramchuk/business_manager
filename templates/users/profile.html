@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Профиль</h1>
+
+<div class="card">
+    <p><b>Email:</b> {{ user.email }}</p>
+    <p><b>Имя пользователя:</b> {{ user.username }}</p>
+    <p><b>Имя:</b> {{ user.first_name|default:"—" }}</p>
+    <p><b>Фамилия:</b> {{ user.last_name|default:"—" }}</p>
+    <p><b>Роль в системе:</b> {{ user.get_role_display }}</p>
+
+    <p class="toolbar" style="margin-bottom:0;">
+        <a class="button" href="{% url 'profile_edit' %}">Изменить профиль</a>
+        <a class="button button--danger" href="{% url 'profile_delete' %}">Удалить аккаунт</a>
+        <a class="button button--secondary" href="{% url 'home' %}">На главную</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Календарь: {{ month }}.{{ year }}</h1>
+
+<table style="width:100%; border-collapse: collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+<tr style="background:#34495e; color:#fff;">
+    <th style="padding:10px;">Пн</th>
+    <th style="padding:10px;">Вт</th>
+    <th style="padding:10px;">Ср</th>
+    <th style="padding:10px;">Чт</th>
+    <th style="padding:10px;">Пт</th>
+    <th style="padding:10px;">Сб</th>
+    <th style="padding:10px;">Вс</th>
+</tr>
+
+{% for week in calendar_data %}
+<tr>
+    {% for day in week %}
+    <td style="
+        border:1px solid #e0e4e8;
+        vertical-align: top;
+        min-height:120px;
+        padding:8px;
+        {% if not day.is_current_month %}
+            background:#f4f6f8;
+            color:#95a5a6;
+        {% endif %}
+        {% if day.date == today %}
+        outline:2px solid #e74c3c;
+        outline-offset:-2px;
+        {% endif %}
+    ">
+
+        <a href="{% url 'calendar_day' day.date.year day.date.month day.date.day %}">
+            <b>{{ day.date.day }}</b>
+        </a>
+
+        {% for task in day.tasks %}
+            <div style="background:#3498db; color:white; margin:4px 0; padding:4px 6px; font-size:12px; border-radius:4px;">
+                {{ task.title }}
+            </div>
+        {% endfor %}
+
+        {% for meeting in day.meetings %}
+            <div style="background:#e67e22; color:white; margin:4px 0; padding:4px 6px; font-size:12px; border-radius:4px;">
+                {{ meeting.title }}
+            </div>
+        {% endfor %}
+
+    </td>
+    {% endfor %}
+</tr>
+{% endfor %}
+
+</table>
+
+{% endblock %}

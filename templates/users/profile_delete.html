@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Удаление аккаунта</h1>
+
+<div class="card">
+    <p>Вы уверены, что хотите удалить аккаунт? Это действие <b>необратимо</b>.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="button button--danger">Да, удалить аккаунт</button>
+    </form>
+    <p style="margin-top:16px;">
+        <a class="button button--secondary" href="{% url 'profile' %}">Отмена</a>
+    </p>
+</div>
+{% endblock %}

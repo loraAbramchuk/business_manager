@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Задачи</h1>
+
+<div class="toolbar">
+    <a class="button" href="{% url 'task_create' %}">Новая задача</a>
+</div>
+
+{% for task in tasks %}
+<div class="card">
+    <a href="{% url 'task_detail' task.id %}"><b>{{ task.title }}</b></a>
+
+    <p style="margin:10px 0 0;">
+        Статус:
+        <span style="font-weight:600; color:
+            {% if task.status == 'DONE' %}#27ae60
+            {% elif task.status == 'IN_PROGRESS' %}#e67e22
+            {% else %}#7f8c8d
+            {% endif %};">
+            {% if task.status == 'DONE' %}Выполнено{% elif task.status == 'IN_PROGRESS' %}В работе{% else %}Открыта{% endif %}
+        </span>
+    </p>
+
+    {% if task.creator_id == user.id or task.team_id in managed_team_ids %}
+    <p style="margin-top:12px;">
+        <a class="button button--secondary" href="{% url 'task_update' task.id %}">Изменить</a>
+        <a class="button button--danger" href="{% url 'task_delete' task.id %}">Удалить</a>
+    </p>
+    {% endif %}
+</div>
+{% empty %}
+<div class="card">
+    <p class="muted">Нет задач в ваших командах.</p>
+</div>
+{% endfor %}
+
+{% endblock %}
