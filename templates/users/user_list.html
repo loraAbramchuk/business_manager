@@ -2,53 +2,56 @@
 
 {% block content %}
 
-{% if not team %}
 <h1>Пользователи</h1>
-<div class="card">
-    <p class="muted">В системе пока нет команд. <a href="{% url 'team_create' %}">Создайте команду</a>, чтобы добавлять участников.</p>
-</div>
+
+{% if team %}
+    <div class="card">
+        <form method="get" style="margin-bottom:12px;">
+            <label>Команда для добавления:</label>
+            <select name="team_id" onchange="this.form.submit()" style="margin-left:8px; min-width:12rem;">
+                {% for t in teams %}
+                    <option value="{{ t.id }}" {% if t.id == team.id %}selected{% endif %}>
+                        {{ t.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+        <p class="muted" style="margin:0;">Отметьте пользователя и добавьте в выбранную команду (нужны права менеджера в этой команде).</p>
+    </div>
 {% else %}
-
-<h1>Пользователи</h1>
-
-<div class="card">
-    <form method="get" style="margin-bottom:12px;">
-        <label>Команда для добавления:</label>
-        <select name="team_id" onchange="this.form.submit()" style="margin-left:8px; min-width:12rem;">
-            {% for t in teams %}
-                <option value="{{ t.id }}" {% if t.id == team.id %}selected{% endif %}>
-                    {{ t.name }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
-    <p class="muted" style="margin:0;">Отметьте пользователя и добавьте в выбранную команду (нужны права менеджера в этой команде).</p>
-</div>
+    <div class="card">
+        <p class="muted">У вас пока нет команды, где вы менеджер. <a href="{% url 'team_create' %}">Создайте команду</a>, чтобы добавлять участников.</p>
+    </div>
+{% endif %}
 
 {% for u in users %}
 <div class="card">
     <b>{{ u.email }}</b>
     <span class="muted"> · роль: {{ u.get_role_display }}</span>
 
-    {% if u.id in member_ids %}
-        <p style="color:#27ae60; margin:10px 0 0;">Уже в выбранной команде</p>
-    {% else %}
-        <form method="post" action="{% url 'quick_add_member' %}" style="margin-top:12px;">
-            {% csrf_token %}
-            <input type="hidden" name="user_id" value="{{ u.id }}">
-            <input type="hidden" name="team_id" value="{{ team.id }}">
-            <label>Роль в команде
-                <select name="role">
-                    <option value="EMPLOYEE">Сотрудник</option>
-                    <option value="MANAGER">Менеджер</option>
-                </select>
-            </label>
-            <button class="button" type="submit">Добавить в команду</button>
-        </form>
+    {% if team %}
+        {% if u.id in member_ids %}
+            <p style="color:#27ae60; margin:10px 0 0;">Уже в выбранной команде</p>
+        {% else %}
+            <form method="post" action="{% url 'quick_add_member' %}" style="margin-top:12px;">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" value="{{ u.id }}">
+                <input type="hidden" name="team_id" value="{{ team.id }}">
+                <label>Роль в команде
+                    <select name="role">
+                        <option value="EMPLOYEE">Сотрудник</option>
+                        <option value="MANAGER">Менеджер</option>
+                    </select>
+                </label>
+                <button class="button" type="submit">Добавить в команду</button>
+            </form>
+        {% endif %}
     {% endif %}
 </div>
+{% empty %}
+<div class="card">
+    <p class="muted">Пользователей пока нет.</p>
+</div>
 {% endfor %}
-
-{% endif %}
 
 {% endblock %}
