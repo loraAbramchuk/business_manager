@@ -8,6 +8,9 @@
     <label>Год <input type="number" name="year" value="{{ filter_year|default:'' }}" placeholder="например, 2026" style="width:7rem;"></label>
     <label style="margin-left:12px;">Месяц <input type="number" name="month" min="1" max="12" value="{{ filter_month|default:'' }}" placeholder="1–12" style="width:5rem;"></label>
     <button type="submit" class="button" style="margin-top:12px;">Пересчитать</button>
+    {% if period_error %}
+        <p style="color:#c0392b; margin:10px 0 0;">{{ period_error }}</p>
+    {% endif %}
 </form>
 
 <div class="card">

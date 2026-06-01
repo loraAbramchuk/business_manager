@@ -38,25 +38,40 @@ def evaluation_create_view(request):
 def my_evaluations_view(request):
     evaluations = Evaluation.objects.filter(employee=request.user)
 
-    year = request.GET.get("year")
-    month = request.GET.get("month")
-    try:
-        y = int(year) if year is not None else None
-        m = int(month) if month is not None else None
-    except ValueError:
-        y, m = None, None
-
-    avg = request.user.average_score_for_month(y, m)
-
     today = timezone.now().date()
-    gy, gm = request.GET.get("year"), request.GET.get("month")
-    has_custom_period = bool(
-        (gy is not None and str(gy).strip() != "")
-        or (gm is not None and str(gm).strip() != "")
-    )
-    if has_custom_period and y is not None and m is not None:
+
+    year = request.GET.get("year", "").strip()
+    month = request.GET.get("month", "").strip()
+
+    y = None
+    m = None
+    avg = None
+    period_error = ""
+    has_custom_period = year != "" or month != ""
+
+    if has_custom_period:
+        if year == "" or month == "":
+            period_error = "Введите и год, и месяц."
+        else:
+            try:
+                y = int(year)
+                m = int(month)
+            except ValueError:
+                period_error = "Год и месяц должны быть числами."
+
+        if not period_error:
+            if y < 1:
+                period_error = "Год должен быть положительным числом."
+            elif m < 1 or m > 12:
+                period_error = "Месяц должен быть от 1 до 12."
+
+    if period_error:
+        avg_period_caption = "неверный период"
+    elif has_custom_period:
+        avg = request.user.average_score_for_month(y, m)
         avg_period_caption = f"{m:02d}.{y}"
     else:
+        avg = request.user.average_score_for_current_month()
         avg_period_caption = f"текущий месяц ({today.month:02d}.{today.year})"
 
     return render(
@@ -68,5 +83,6 @@ def my_evaluations_view(request):
             "filter_year": y,
             "filter_month": m,
             "avg_period_caption": avg_period_caption,
+            "period_error": period_error,
         },
     )
