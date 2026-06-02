@@ -8,13 +8,21 @@ from django.views.decorators.http import require_POST
 from .forms import AddMemberForm, JoinTeamByCodeForm, TeamForm
 from .models import Team, TeamMembership
 from .permissions import is_team_manager, is_team_member
+from .selectors import get_team_memberships, get_teams_for_user
+from .services import (
+    add_or_update_member,
+    create_team,
+    join_team_by_code,
+    remove_member,
+    set_member_role,
+)
 
 User = get_user_model()
 
 
 @login_required
 def team_list_view(request):
-    teams = Team.objects.filter(teammembership__user=request.user).distinct()
+    teams = get_teams_for_user(request.user)
     return render(request, "teams/team_list.html", {"teams": teams})
 
 
@@ -25,7 +33,7 @@ def team_detail_view(request, team_id):
     if not is_team_member(request.user, team):
         return HttpResponseForbidden()
 
-    memberships = TeamMembership.objects.filter(team=team)
+    memberships = get_team_memberships(team)
 
     return render(
         request,
@@ -51,14 +59,7 @@ def add_member_view(request, team_id):
             user = form.cleaned_data["user"]
             role = form.cleaned_data["role"]
 
-            membership, created = TeamMembership.objects.get_or_create(
-                team=team,
-                user=user,
-                defaults={"role": role},
-            )
-            if not created:
-                membership.role = role
-                membership.save(update_fields=["role"])
+            add_or_update_member(team, user, role)
 
             return redirect("team_detail", team_id=team.id)
     else:
@@ -76,8 +77,7 @@ def remove_member_view(request, membership_id):
     if not is_team_manager(request.user, membership.team):
         return HttpResponseForbidden()
 
-    team_id = membership.team.id
-    membership.delete()
+    team_id = remove_member(membership)
 
     return redirect("team_detail", team_id=team_id)
 
@@ -91,14 +91,8 @@ def membership_set_role_view(request, membership_id):
         return HttpResponseForbidden()
 
     role = request.POST.get("role")
-    if role not in (
-        TeamMembership.Role.MANAGER,
-        TeamMembership.Role.EMPLOYEE,
-    ):
+    if not set_member_role(membership, role):
         return redirect("team_detail", team_id=membership.team_id)
-
-    membership.role = role
-    membership.save(update_fields=["role"])
 
     return redirect("team_detail", team_id=membership.team_id)
 
@@ -115,17 +109,11 @@ def quick_add_member_view(request):
     if not is_team_manager(request.user, team):
         return HttpResponseForbidden()
 
-    membership, created = TeamMembership.objects.get_or_create(
-        user=user,
-        team=team,
-        defaults={"role": role}
-    )
+    _membership, created = add_or_update_member(team, user, role)
 
     if created:
         messages.success(request, f"{user.email} добавлен в команду")
     else:
-        membership.role = role
-        membership.save(update_fields=["role"])
         messages.success(request, f"{user.email}: роль обновлена")
 
     return redirect("user_list")
@@ -136,17 +124,7 @@ def team_create_view(request):
         form = TeamForm(request.POST)
 
         if form.is_valid():
-            team = form.save(commit=False)
-
-            team.owner = request.user
-            team.save()
-
-            TeamMembership.objects.create(
-                team=team,
-                user=request.user,
-                role=TeamMembership.Role.MANAGER,
-            )
-
+            team = create_team(form, request.user)
             return redirect("team_detail", team_id=team.id)
 
     else:
@@ -163,16 +141,9 @@ def join_team_by_code_view(request):
 
         if form.is_valid():
             code = form.cleaned_data["code"]
-
-            team = Team.objects.filter(join_code=code).first()
+            team = join_team_by_code(request.user, code)
 
             if team:
-                TeamMembership.objects.get_or_create(
-                    team=team,
-                    user=request.user,
-                    defaults={"role": TeamMembership.Role.EMPLOYEE},
-                )
-
                 return redirect("team_detail", team_id=team.id)
 
     else:
