@@ -1,3 +1,5 @@
+from django.contrib import messages
+from django.db import DatabaseError, IntegrityError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -21,13 +23,15 @@ def meeting_create_view(request):
         form = MeetingForm(request.POST)
 
         if form.is_valid():
-            meeting = form.save(commit=False)
-            meeting.organizer = request.user
-            meeting.save()
-            form.save_m2m()
-            meeting.participants.add(request.user)
-
-            return redirect("meeting_list")
+            try:
+                meeting = form.save(commit=False)
+                meeting.organizer = request.user
+                meeting.save()
+                form.save_m2m()
+                meeting.participants.add(request.user)
+                return redirect("meeting_list")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось создать встречу.")
     else:
         form = MeetingForm()
 
@@ -44,6 +48,9 @@ def meeting_delete_view(request, meeting_id):
     ).exists():
         return HttpResponseForbidden()
 
-    meeting.delete()
+    try:
+        meeting.delete()
+    except (DatabaseError, IntegrityError):
+        messages.error(request, "Не удалось удалить встречу.")
 
     return redirect("meeting_list")

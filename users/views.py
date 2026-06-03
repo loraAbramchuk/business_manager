@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError, IntegrityError
+from django.shortcuts import render, redirect
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from teams.models import Team
@@ -17,9 +19,12 @@ def register_view(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect("home")
+            try:
+                user = form.save()
+                login(request, user)
+                return redirect("home")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось зарегистрировать пользователя.")
     else:
         form = RegisterForm()
 
@@ -42,8 +47,11 @@ def profile_edit_view(request):
         form = ProfileUpdateForm(request.POST, instance=request.user)
 
         if form.is_valid():
-            form.save()
-            return redirect("profile")
+            try:
+                form.save()
+                return redirect("profile")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось сохранить профиль.")
     else:
         form = ProfileUpdateForm(instance=request.user)
 
@@ -53,8 +61,11 @@ def profile_edit_view(request):
 @login_required
 def profile_delete_view(request):
     if request.method == "POST":
-        request.user.delete()
-        return redirect("home")
+        try:
+            request.user.delete()
+            return redirect("home")
+        except (DatabaseError, IntegrityError):
+            messages.error(request, "Не удалось удалить профиль.")
 
     return render(request, "users/profile_delete.html")
 

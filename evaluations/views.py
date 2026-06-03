@@ -1,4 +1,6 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError, IntegrityError
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 
@@ -22,9 +24,11 @@ def evaluation_create_view(request):
             if not is_team_manager(request.user, task.team):
                 return HttpResponseForbidden()
 
-            create_evaluation(form, request.user)
-
-            return redirect("my_evaluations")
+            try:
+                create_evaluation(form, request.user)
+                return redirect("my_evaluations")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось сохранить оценку.")
     else:
         form = EvaluationForm(evaluator=request.user)
 

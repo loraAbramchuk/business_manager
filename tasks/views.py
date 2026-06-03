@@ -1,9 +1,11 @@
 from datetime import date
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError, IntegrityError
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.viewsets import ModelViewSet
 
 from comments.services import create_comment
@@ -61,9 +63,11 @@ def task_detail_view(request, task_id):
         form = CommentForm(request.POST)
 
         if form.is_valid():
-            create_comment(form, task, request.user)
-
-            return redirect("task_detail", task_id=task.id)
+            try:
+                create_comment(form, task, request.user)
+                return redirect("task_detail", task_id=task.id)
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось добавить комментарий.")
     else:
         form = CommentForm()
 
@@ -88,9 +92,11 @@ def task_create_view(request):
             team = form.cleaned_data["team"]
             if not is_team_manager(request.user, team):
                 return HttpResponseForbidden()
-            create_task(form, request.user)
-
-            return redirect("task_list")
+            try:
+                create_task(form, request.user)
+                return redirect("task_list")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось создать задачу.")
     else:
         form = TaskForm(user=request.user)
 
@@ -108,8 +114,11 @@ def task_update_view(request, task_id):
         form = TaskForm(request.POST, instance=task, user=request.user)
 
         if form.is_valid():
-            form.save()
-            return redirect("task_list")
+            try:
+                form.save()
+                return redirect("task_list")
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось сохранить задачу.")
     else:
         form = TaskForm(instance=task, user=request.user)
 
@@ -123,7 +132,10 @@ def task_delete_view(request, task_id):
     if not can_manage_task(request.user, task):
         return HttpResponseForbidden()
 
-    delete_task(task)
+    try:
+        delete_task(task)
+    except (DatabaseError, IntegrityError):
+        messages.error(request, "Не удалось удалить задачу.")
 
     return redirect("task_list")
 
@@ -155,14 +167,23 @@ class TaskViewSet(ModelViewSet):
         team = serializer.validated_data.get("team")
         if not team or not is_team_manager(self.request.user, team):
             raise PermissionDenied("Только менеджер команды может создавать задачи.")
-        serializer.save(creator=self.request.user)
+        try:
+            serializer.save(creator=self.request.user)
+        except (DatabaseError, IntegrityError) as error:
+            raise APIException("Не удалось создать задачу.") from error
 
     def perform_update(self, serializer):
         if not can_manage_task(self.request.user, serializer.instance):
             raise PermissionDenied("Недостаточно прав для изменения задачи.")
-        serializer.save()
+        try:
+            serializer.save()
+        except (DatabaseError, IntegrityError) as error:
+            raise APIException("Не удалось сохранить задачу.") from error
 
     def perform_destroy(self, instance):
         if not can_manage_task(self.request.user, instance):
             raise PermissionDenied("Недостаточно прав для удаления задачи.")
-        delete_task(instance)
+        try:
+            delete_task(instance)
+        except (DatabaseError, IntegrityError) as error:
+            raise APIException("Не удалось удалить задачу.") from error

@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db import DatabaseError, IntegrityError
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -59,9 +60,11 @@ def add_member_view(request, team_id):
             user = form.cleaned_data["user"]
             role = form.cleaned_data["role"]
 
-            add_or_update_member(team, user, role)
-
-            return redirect("team_detail", team_id=team.id)
+            try:
+                add_or_update_member(team, user, role)
+                return redirect("team_detail", team_id=team.id)
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось добавить участника.")
     else:
         form = AddMemberForm()
 
@@ -77,7 +80,11 @@ def remove_member_view(request, membership_id):
     if not is_team_manager(request.user, membership.team):
         return HttpResponseForbidden()
 
-    team_id = remove_member(membership)
+    try:
+        team_id = remove_member(membership)
+    except (DatabaseError, IntegrityError):
+        messages.error(request, "Не удалось удалить участника.")
+        team_id = membership.team_id
 
     return redirect("team_detail", team_id=team_id)
 
@@ -91,7 +98,13 @@ def membership_set_role_view(request, membership_id):
         return HttpResponseForbidden()
 
     role = request.POST.get("role")
-    if not set_member_role(membership, role):
+    try:
+        role_changed = set_member_role(membership, role)
+    except (DatabaseError, IntegrityError):
+        messages.error(request, "Не удалось изменить роль участника.")
+        return redirect("team_detail", team_id=membership.team_id)
+
+    if not role_changed:
         return redirect("team_detail", team_id=membership.team_id)
 
     return redirect("team_detail", team_id=membership.team_id)
@@ -109,7 +122,11 @@ def quick_add_member_view(request):
     if not is_team_manager(request.user, team):
         return HttpResponseForbidden()
 
-    _membership, created = add_or_update_member(team, user, role)
+    try:
+        _membership, created = add_or_update_member(team, user, role)
+    except (DatabaseError, IntegrityError):
+        messages.error(request, "Не удалось добавить пользователя в команду.")
+        return redirect("user_list")
 
     if created:
         messages.success(request, f"{user.email} добавлен в команду")
@@ -124,8 +141,11 @@ def team_create_view(request):
         form = TeamForm(request.POST)
 
         if form.is_valid():
-            team = create_team(form, request.user)
-            return redirect("team_detail", team_id=team.id)
+            try:
+                team = create_team(form, request.user)
+                return redirect("team_detail", team_id=team.id)
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось создать команду.")
 
     else:
         form = TeamForm()
@@ -141,7 +161,11 @@ def join_team_by_code_view(request):
 
         if form.is_valid():
             code = form.cleaned_data["code"]
-            team = join_team_by_code(request.user, code)
+            try:
+                team = join_team_by_code(request.user, code)
+            except (DatabaseError, IntegrityError):
+                messages.error(request, "Не удалось войти в команду.")
+                team = None
 
             if team:
                 return redirect("team_detail", team_id=team.id)
