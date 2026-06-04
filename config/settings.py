@@ -60,7 +60,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1").lower() not in ("0", "false", "no")
 _allowed = os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip()
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()] if _allowed else []
 if DEBUG and not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
 if not DEBUG and not ALLOWED_HOSTS:
     raise ImproperlyConfigured(

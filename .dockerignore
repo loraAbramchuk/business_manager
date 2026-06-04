@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+.env.local
+.local_secret_key
+db.sqlite3
+.idea
+.DS_Store
+staticfiles
+media
